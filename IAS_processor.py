@@ -166,11 +166,18 @@ class IAS_processor:
             self.AC = self.AC >> 1
         
         # Adress modify instructions
-        elif self.IR == 0b0001_0010:
-            pass # implement STOR M(X,8:19)
+        elif self.IR == 0b0001_0010: # STOR M(X,8:19)
+            self.MBR = self.M[self.MAR]
+            left_instruction = self.MBR >> 20
+            right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
+            left_instruction = (left_instruction & 0b0000_0000_0000) | (self.AC & 0b1111_1111_1111)
+            self.MBR = (left_instruction << 20) | right_instruction
+            self.M[self.MAR] = self.MBR
         
-        elif self.IR == 0b0001_0011:
-            pass # implement STOR M(X,28:39)
+        elif self.IR == 0b0001_0011: # STOR M(X,28:39)
+            self.MBR = self.M[self.MAR]
+            self.MBR = (self.MBR & 0b0000_0000_0000) | (self.AC & 0b1111_1111_1111)
+            self.M[self.MAR] = self.MBR
         
         self.IR = 0b0000_0000 # resetting IR after use
         self.MAR = 0b0000_0000_0000 # resetting MAR after use
