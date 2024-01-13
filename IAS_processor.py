@@ -18,7 +18,16 @@ class IAS_processor:
                 line = line.strip()
                 x = line.split(' ')
                 x[0] = int(x[0], 2)
-                x[1] = int(x[1], 2)
+                if x[1][0] == '1':
+                    new = ''
+                    for char in x[1]:
+                        if char=='1':
+                            new += '0'
+                        else:
+                            new += '1'
+                    x[1] = int(new, 2) + 1
+                else:
+                    x[1] = int(x[1], 2)
                 self.M[x[0]] = x[1]
         
         self.fetch_cycle()
