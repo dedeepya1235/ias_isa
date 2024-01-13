@@ -12,6 +12,9 @@ class IAS_processor:
         self.MQ  = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # Multiplier/Quotient - 40bits
         self.M   = {} # Main memory with 12bit address keys and 40bit values
         
+        for i in range (50):
+            self.M[i+1] = 0
+        
         with open(file_name, 'r') as file:
             lines = file.readlines()
             for line in lines:
@@ -29,10 +32,7 @@ class IAS_processor:
                 else:
                     x[1] = int(x[1], 2)
                 self.M[x[0]] = x[1]
-        
-        for i in range (50):
-            self.M[x[0]+1+i] = 0
-        
+               
         self.fetch_cycle()
     
     def fetch_cycle(self):
