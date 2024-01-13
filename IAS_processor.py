@@ -1,9 +1,9 @@
 
 class IAS_processor:
     
-    def __init__(self, file_name):
+    def __init__(self, PC, memory, file_name):
         
-        self.PC  = 0b0000_0000_0001 # Program counter - 12bits
+        self.PC  = PC # Program counter - 12bits
         self.AC  = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # Accumulator - 40bits
         self.IR  = 0b0000_0000 # Instruction register - 8bits
         self.MAR = 0b0000_0000_0000 # Memory address register - 12bits
@@ -12,7 +12,7 @@ class IAS_processor:
         self.MQ  = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # Multiplier/Quotient - 40bits
         self.M   = {} # Main memory with 12bit address keys and 40bit values
         
-        for i in range (50):
+        for i in range (memory):
             self.M[i+1] = 0
         
         with open(file_name, 'r') as file:
@@ -158,7 +158,7 @@ class IAS_processor:
                 self.MBR = ~self.MBR + 1
             self.AC = self.AC - self.MBR
         
-        elif self.IR == 0b0000_1011:
+        elif self.IR == 0b0000_1011: # MUL M(X)
             self.MBR = self.M[self.MAR]
             Product = self.MQ * self.MBR
             self.AC = Product >> 40
@@ -192,7 +192,8 @@ class IAS_processor:
             self.M[self.MAR] = self.MBR
         
         elif self.IR == 0b0001_1100:
-            return
+            print(self.AC)
+            exit()
         
         self.IR = 0b0000_0000 # resetting IR after use
         self.MAR = 0b0000_0000_0000 # resetting MAR after use
@@ -208,5 +209,5 @@ class IAS_processor:
         else:
             self.fetch_cycle()
 
-a = IAS_processor("machine_code.txt")
+a = IAS_processor(4, 50, "machine_code.txt")
 print(a.AC)
