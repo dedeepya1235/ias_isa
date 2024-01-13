@@ -28,7 +28,7 @@ class IAS_processor:
         self.MAR = self.PC
         self.MBR = self.M[self.MAR]
         
-        self.pc += 1
+        self.PC += 1
         
         self.decode_cycle()
     
@@ -41,72 +41,129 @@ class IAS_processor:
         self.MAR = left_instruction & 0b1111_1111_1111 # Getting the last 12bits for adress
         self.IBR = right_instruction # Storing right instruction in IBR
         
-        self.MBR = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # resetting MBR after it's use
-        
         self.execute_cycle()
     
     def execute_cycle(self):
     
         # Data transfer instructions
-        if self.IR == 0b0000_1010:
-            pass # implement LOAD MQ
+        if self.IR == 0b0000_1010: # LOAD MQ
+            self.AC = self.MQ
         
-        elif self.IR == 0b0000_1001:
-            pass # implement LOAD MQ,M(X)
+        elif self.IR == 0b0000_1001: # LOAD MQ,M(X)
+            self.MBR = self.M[self.MAR]
+            self.MQ = self.MBR
         
-        elif self.IR == 0b0010_0001:
-            pass # implement STOR M(X)
+        elif self.IR == 0b0010_0001: # STOR M(X)
+            self.MBR = self.AC
+            self.M[self.MAR] = self.MBR
         
-        elif self.IR == 0b0000_0001:
-            pass # implement LOAD M(X)
+        elif self.IR == 0b0000_0001: # LOAD M(X)
+            self.MBR = self.M[self.MAR]
+            self.AC = self.MBR
         
-        elif self.IR == 0b0000_0010:
-            pass # implement LOAD -M(X)
+        elif self.IR == 0b0000_0010: # LOAD -M(X)
+            self.MBR = self.M[self.MAR]
+            self.MBR = ~self.MBR + 1
+            self.AC = self.MBR
         
-        elif self.IR == 0b0000_0011:
-            pass # implement LOAD |M(X)|
+        elif self.IR == 0b0000_0011: # LOAD |M(X)|
+            self.MBR = self.M[self.MAR]
+            if self.MBR < 0:
+                self.MBR = ~self.MBR + 1
+            self.AC = self.MBR
         
-        elif self.IR == 0b0000_0100:
-            pass # implement LOAD -|M(X)|
+        elif self.IR == 0b0000_0100: # LOAD -|M(X)|
+            self.MBR = self.M[self.MAR]
+            if self.MBR < 0:
+                self.MBR = ~self.MBR + 1
+            self.MBR = ~self.MBR + 1
+            self.AC = self.MBR
         
         # Unconditional branch instructions
-        elif self.IR == 0b0000_1101:
-            pass # implement JUMP M(X,0:19)
+        elif self.IR == 0b0000_1101: # JUMP M(X,0:19)
+            self.PC = self.MAR
+            self.fetch_cycle()
         
-        elif self.IR == 0b0000_1110:
-            pass # implement JUMP M(X,20:39)
+        elif self.IR == 0b0000_1110: # JUMP M(X,20:39)
+            self.PC = self.MAR
+            self.IBR = 0b0000_0000_0000_0000_0000 #resetting IBR
+            
+            # kind of fetch cycle
+            self.MAR = self.PC
+            self.MBR = self.M[self.MAR]
+            self.PC +=1
+            
+            # kind of decode cycle with ignoring left instruction
+            right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
+            self.IR = right_instruction >> 12
+            self.MAR = right_instruction & 0b1111_1111_1111
+            
+            # going to execute cycle
+            self.execute_cycle()
         
         # Conditional branch instructions
-        elif self.IR == 0b0000_1111:
-            pass # implement JUMP+ M(X,0:19)
+        elif self.IR == 0b0000_1111: # JUMP+ M(X,0:19)
+            if self.AC >= 0:
+                self.PC = self.MAR
+                self.fetch_cycle()
         
-        elif self.IR == 0b0001_0000:
-            pass # implement JUMP+ M(X,20:39)
+        elif self.IR == 0b0001_0000: # JUMP+ M(X,20:39)
+            if self.AC >= 0:
+                self.PC = self.MAR
+                self.IBR = 0b0000_0000_0000_0000_0000 #resetting IBR
+                
+                # kind of fetch cycle
+                self.MAR = self.PC
+                self.MBR = self.M[self.MAR]
+                self.PC +=1
+                
+                # kind of decode cycle with ignoring left instruction
+                right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
+                self.IR = right_instruction >> 12
+                self.MAR = right_instruction & 0b1111_1111_1111
+                
+                # going to execute cycle
+                self.execute_cycle()
         
         # Arithmetic instructions
-        elif self.IR == 0b0000_0101:
-            pass # implement ADD M(X)
+        elif self.IR == 0b0000_0101: # ADD M(X)
+            self.MBR = self.M[self.MAR]
+            self.AC = self.AC + self.MBR
         
-        elif self.IR == 0b0000_0111:
-            pass # implement ADD |M(X)|
+        elif self.IR == 0b0000_0111: # ADD |M(X)|
+            self.MBR = self.M[self.MAR]
+            if self.MBR < 0:
+                self.MBR = ~self.MBR + 1
+            self.AC = self.AC + self.MBR
         
-        elif self.IR == 0b0000_0110:
-            pass # implement SUB M(X)
+        elif self.IR == 0b0000_0110: # SUB M(X)
+            self.MBR = self.M[self.MAR]
+            self.AC = self.AC - self.MBR
         
-        elif self.IR == 0b0000_1000:
-            pass # implement SUB |M(X)|
+        elif self.IR == 0b0000_1000: # SUB |M(X)|
+            self.MBR = self.M[self.MAR]
+            if self.MBR < 0:
+                self.MBR = ~self.MBR + 1
+            self.AC = self.AC - self.MBR
         
         elif self.IR == 0b0000_1011:
-            pass # implement MUL M(X)
+            self.MBR = self.M[self.MAR]
+            Product = self.MQ * self.MBR
+            self.AC = Product >> 40
+            self.MQ = Product & 0b1111_1111_1111_1111_1111_1111_1111_1111_1111_1111
         
-        elif self.IR == 0b0000_1100:
-            pass # implement DIV M(X)
+        elif self.IR == 0b0000_1100: # DIV M(X)
+            self.MBR = self.M[self.MAR]
+            Quotient = self.AC // self.MBR
+            Remainder = self.AC % self.MBR
+            self.AC = Remainder
+            self.MQ = Quotient
         
-        elif self.IR == 0b0001_0100:
-            pass # implement LSH
+        elif self.IR == 0b0001_0100: # LSH
+            self.AC = self.AC << 1
         
-        elif self.IR == 0b0001_0101:
-            pass # implement RSH
+        elif self.IR == 0b0001_0101: # RSH
+            self.AC = self.AC >> 1
         
         # Adress modify instructions
         elif self.IR == 0b0001_0010:
