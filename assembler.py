@@ -53,6 +53,6 @@ class IASAssembler:
                                 )
 
                     machine_code.append(temp + temp2)
-                    output.write(temp + temp2 + "\n")
+                    output.write(temp + format(int(temp2, 2), "040b") + "\n")
 
         return machine_code
