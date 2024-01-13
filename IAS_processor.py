@@ -3,7 +3,7 @@ class IAS_processor:
     
     def __init__(self, file_name):
         
-        self.PC  = 0b0000_0000_0000 # Program counter - 12bits
+        self.PC  = 0b0000_0000_0001 # Program counter - 12bits
         self.AC  = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # Accumulator - 40bits
         self.IR  = 0b0000_0000 # Instruction register - 8bits
         self.MAR = 0b0000_0000_0000 # Memory address register - 12bits
@@ -29,6 +29,9 @@ class IAS_processor:
                 else:
                     x[1] = int(x[1], 2)
                 self.M[x[0]] = x[1]
+        
+        for i in range (50):
+            self.M[x[0]+i] = 0
         
         self.fetch_cycle()
     
@@ -188,6 +191,9 @@ class IAS_processor:
             self.MBR = (self.MBR & 0b0000_0000_0000) | (self.AC & 0b1111_1111_1111)
             self.M[self.MAR] = self.MBR
         
+        elif self.IR == 0b0001_1100:
+            return
+        
         self.IR = 0b0000_0000 # resetting IR after use
         self.MAR = 0b0000_0000_0000 # resetting MAR after use
         
@@ -203,3 +209,4 @@ class IAS_processor:
             self.fetch_cycle()
 
 a = IAS_processor("machine_code.txt")
+print(a.AC)
