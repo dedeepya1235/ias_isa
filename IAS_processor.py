@@ -191,7 +191,7 @@ class IAS_processor:
             self.MBR = (self.MBR & 0b0000_0000_0000) | (self.AC & 0b1111_1111_1111)
             self.M[self.MAR] = self.MBR
         
-        elif self.IR == 0b0001_1100:
+        elif self.IR == 0b0001_1100: # NOP
             print(self.AC)
             exit()
         
