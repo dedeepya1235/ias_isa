@@ -1,7 +1,6 @@
 from assembler import IASAssembler
-from IAS_processor import IAS_processor
 
-# need to change the assembler so that instead of -00000001100 it gives the twos complement
+# from IAS_processor import IAS_processor
 
 
 def main():
