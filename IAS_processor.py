@@ -31,7 +31,7 @@ class IAS_processor:
                 self.M[x[0]] = x[1]
         
         for i in range (50):
-            self.M[x[0]+i] = 0
+            self.M[x[0]+1+i] = 0
         
         self.fetch_cycle()
     
