@@ -30,9 +30,9 @@ class IASAssembler:
         }
 
     #  source code in assembly might look like [symbol aka translate it into its opcode] [address]
-    def assemble(self, path):
+    def assemble(self, path, out):
         machine_code = []
-        with open(path, "r") as source:
+        with open(path, "r") as source, open(out, "w") as output:
             for line in source:
                 if line:
                     instructions = line.strip().split()
@@ -42,7 +42,9 @@ class IASAssembler:
                         if opcode:
                             temp += opcode + " "
                         else:
-                            temp += bin(int(instruction))[2:] + " "
+                            # temp += bin(int(instruction))[2:] + " "
+                            temp += format(int(instruction), "012b") + " "
                     machine_code.append(temp)
+                    output.write(temp + "\n")
 
         return machine_code
