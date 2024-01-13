@@ -1,7 +1,7 @@
 
 class IAS_processor:
     
-    def __init__(self):
+    def __init__(self, file_name):
         
         self.PC  = 0b0000_0000_0000 # Program counter - 12bits
         self.AC  = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # Accumulator - 40bits
@@ -11,6 +11,17 @@ class IAS_processor:
         self.IBR = 0b0000_0000_0000_0000_0000 # Instruction buffer register - 20bits
         self.MQ  = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # Multiplier/Quotient - 40bits
         self.M   = {} # Main memory with 12bit address keys and 40bit values
+        
+        with open(file_name, 'r') as file:
+            lines = file.readlines()
+            for line in lines:
+                line = line.strip()
+                x = line.split(' ')
+                x[0] = int(x[0], 2)
+                x[1] = int(x[1], 2)
+                self.M[x[0]] = x[1]
+        
+        self.fetch_cycle()
     
     def fetch_cycle(self):
         
@@ -18,6 +29,8 @@ class IAS_processor:
         self.MBR = self.M[self.MAR]
         
         self.pc += 1
+        
+        self.decode_cycle()
     
     def decode_cycle(self):
         
@@ -29,6 +42,8 @@ class IAS_processor:
         self.IBR = right_instruction # Storing right instruction in IBR
         
         self.MBR = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # resetting MBR after it's use
+        
+        self.execute_cycle()
     
     def execute_cycle(self):
     
@@ -99,3 +114,19 @@ class IAS_processor:
         
         elif self.IR == 0b0001_0011:
             pass # implement STOR M(X,28:39)
+        
+        self.IR = 0b0000_0000 # resetting IR after use
+        self.MAR = 0b0000_0000_0000 # resetting MAR after use
+        
+        if self.IBR:
+            self.IR = self.IBR >> 12 # Getting the first 8bits ie opcode
+            self.MAR = self.IBR & 0b1111_1111_1111 # Getting the last 12bits for adress
+            
+            self.IBR = 0b0000_0000_0000_0000_0000 # resetting IBR after it's use
+            
+            self.execute_cycle()
+        
+        else:
+            self.fetch_cycle()
+
+a = IAS_processor("machine_code.txt")
