@@ -1,5 +1,4 @@
 LOAD_M_X 3 ADD_M_X 4
 STOR_M_X 5 NOP
-NOP
 -12
 15

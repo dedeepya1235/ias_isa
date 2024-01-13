@@ -40,19 +40,23 @@ class IASAssembler:
                     temp = format(c, "012b") + " "
                     temp2 = ""
                     c += 1
-                    for instruction in instructions:
-                        opcode = self.instructions.get(instruction)
-                        if opcode:
-                            temp2 += opcode
-                        else:
-                            if int(instruction) >= 0:
-                                temp2 += format(int(instruction), "012b")
+                    first = instructions[0]
+                    if self.instructions.get(first):
+                        for instruction in instructions:
+                            opcode = self.instructions.get(instruction)
+                            if opcode:
+                                temp2 += opcode
                             else:
-                                temp2 += format(
-                                    int(instruction) & 0b111111111111, "012b"
-                                )
+                                temp2 += format(int(instruction), "012b")
 
+                    else:
+                        if int(first) >= 0:
+                            temp2 += format(int(first), "040b")
+                        else:
+                            temp2 += format(int(first) & 0b111111111111, "040b")
+                    if len(temp2) < 40:
+                        temp2 += "0" * (40 - len(temp2))
                     machine_code.append(temp + temp2)
-                    output.write(temp + format(int(temp2, 2), "040b") + "\n")
+                    output.write(temp + temp2 + "\n")
 
         return machine_code
