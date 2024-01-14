@@ -38,11 +38,10 @@ class IASAssembler:
         with open(path, "r") as source, open(out, "w") as output:
             
             for line in source:
-                
+                c += 1
                 if line.strip():
                     
                     instructions = line.strip().split()
-                    c += 1
                     first = instructions[0]
                     
                     temp1 = format(c, "012b") + " "

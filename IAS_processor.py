@@ -38,6 +38,7 @@ class IAS_processor:
     def fetch_cycle(self):
         
         self.MAR = self.PC
+        # print(self.MAR)
         self.MBR = self.M[self.MAR]
         
         self.PC += 1
@@ -182,17 +183,26 @@ class IAS_processor:
             self.MBR = self.M[self.MAR]
             left_instruction = self.MBR >> 20
             right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
-            left_instruction = (left_instruction & 0b0000_0000_0000) | (self.AC & 0b1111_1111_1111)
+            left_instruction = (left_instruction & 0b1111_1111_0000_0000_0000) | (self.AC & 0b1111_1111_1111)
             self.MBR = (left_instruction << 20) | right_instruction
             self.M[self.MAR] = self.MBR
         
         elif self.IR == 0b0001_0011: # STOR M(X,28:39)
             self.MBR = self.M[self.MAR]
-            self.MBR = (self.MBR & 0b0000_0000_0000) | (self.AC & 0b1111_1111_1111)
+            self.MBR = (self.MBR & 0b1111_1111_1111_1111_1111_1111_1111_0000_0000_0000) | (self.AC & 0b1111_1111_1111)
             self.M[self.MAR] = self.MBR
         
         elif self.IR == 0b0001_1100: # NOP
-            print(self.AC)
+            print(self.M[1])
+            print(self.M[2])
+            print(self.M[3])
+            print(self.M[4])
+            print(self.M[5])
+            print(self.M[6])
+            print(self.M[7])
+            print(self.M[8])
+            print(self.M[9])
+            print(self.M[10])
             exit()
         
         self.IR = 0b0000_0000 # resetting IR after use
@@ -209,5 +219,5 @@ class IAS_processor:
         else:
             self.fetch_cycle()
 
-a = IAS_processor(4, 50, "machine_code.txt")
+a = IAS_processor(100, 50, "machine_code.txt")
 print(a.AC)
