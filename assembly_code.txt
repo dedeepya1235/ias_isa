@@ -1,9 +1,9 @@
 1
-10
+5
 1
-LOAD_MQ_M_X 1 MUL_M_X 2
-LOAD_MQ 0 STOR_M_X 1
-LOAD_M_X 2 SUB_M_X 3
-STOR_M_X 2 SUB_M_X 3
-JUMP_POS_M_X_0_19 4 LOAD_M_X 1
+LOAD_MQ_M_X        1      MUL_M_X 2
+LOAD_MQ                   STOR_M_X 1
+LOAD_M_X           2      SUB_M_X 3
+STOR_M_X           2      SUB_M_X 3
+JUMP_POS_M_X_0_19  4      LOAD_M_X 1
 NOP

@@ -33,32 +33,47 @@ class IASAssembler:
     def assemble(self, path, out):
         
         machine_code = []
-        c = 1
+        c = 0
+        
         with open(path, "r") as source, open(out, "w") as output:
+            
             for line in source:
-                if line:
+                
+                if line.strip():
+                    
                     instructions = line.strip().split()
-                    temp = format(c, "012b") + " "
-                    temp2 = ""
                     c += 1
                     first = instructions[0]
+                    
+                    temp1 = format(c, "012b") + " "
+                    temp2 = ""
+                    
                     if self.instructions.get(first):
                         for instruction in instructions:
                             opcode = self.instructions.get(instruction)
+                            
                             if opcode:
-                                temp2 += opcode
+                                if opcode == "00001010" or opcode == "00011100":
+                                    temp2+=opcode
+                                    temp2+=format(0, "012b")
+                                else:
+                                    temp2 += opcode
+                            
                             else:
                                 temp2 += format(int(instruction), "012b")
 
                     else:
+                        
                         if int(first) >= 0:
                             temp2 += format(int(first), "040b")
+                        
                         else:
                             temp2 += format(int(first) & 0b111111111111, "040b")
+                    
                     if len(temp2) < 40:
                         temp2 += "0" * (40 - len(temp2))
-                    machine_code.append(temp + temp2)
-                    output.write(temp + temp2 + "\n")
+                    machine_code.append(temp1 + temp2)
+                    output.write(temp1 + temp2 + "\n")
 
         return machine_code
 
