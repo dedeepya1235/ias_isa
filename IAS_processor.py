@@ -1,23 +1,22 @@
-import sys
-print(sys.getrecursionlimit())
-sys.setrecursionlimit(5000)
 
 class IAS_processor:
     
-    def __init__(self, PC, memory, file_name):
+    def __init__(self, PC, memory_size, file_name):
         
-        self.PC  = PC # Program counter - 12bits
-        self.AC  = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # Accumulator - 40bits
-        self.IR  = 0b0000_0000 # Instruction register - 8bits
-        self.MAR = 0b0000_0000_0000 # Memory address register - 12bits
-        self.MBR = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # Memory buffer register - 40bits
-        self.IBR = 0b0000_0000_0000_0000_0000 # Instruction buffer register - 20bits
-        self.MQ  = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # Multiplier/Quotient - 40bits
-        self.M   = {} # Main memory with 12bit address keys and 40bit values
+        self.PC  = PC # Program counter - 12 bits
+        self.AC  = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # Accumulator - 40 bits
+        self.IR  = 0b0000_0000 # Instruction register - 8 bits
+        self.MAR = 0b0000_0000_0000 # Memory address register - 12 bits
+        self.MBR = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # Memory buffer register - 40 bits
+        self.IBR = 0b0000_0000_0000_0000_0000 # Instruction buffer register - 20 bits
+        self.MQ  = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000 # Multiplier/Quotient - 40 bits
+        self.M   = {} # Main memory with 12-bit address keys and 40-bit values
         
-        for i in range (memory):
+        # Initialize memory with zeros
+        for i in range (memory_size):
             self.M[i+1] = 0
         
+        # Loading machine code from file_name into memory
         with open(file_name, 'r') as file:
             lines = file.readlines()
             for line in lines:
@@ -25,6 +24,7 @@ class IAS_processor:
                 x = line.split(' ')
                 x[0] = int(x[0], 2)
                 if x[1][0] == '1':
+                    # Converting two's compliment machine code to negative numbers
                     new = ''
                     for char in x[1]:
                         if char=='1':
@@ -35,192 +35,206 @@ class IAS_processor:
                 else:
                     x[1] = int(x[1], 2)
                 self.M[x[0]] = x[1]
-               
-        self.fetch_cycle()
+        
+        # Start executing instructions
+        self.processing()
     
-    def fetch_cycle(self):
+    def processing(self):
+        # A flag which pushes the IAS machine into the right process - Fetch, Decode or Execute
+        flag = "fetch"
         
-        self.MAR = self.PC
-        # print(self.MAR)
-        self.MBR = self.M[self.MAR]
-        
-        self.PC += 1
-        
-        self.decode_cycle()
-    
-    def decode_cycle(self):
-        
-        left_instruction  = self.MBR >> 20 # Gettting the first 20bits for left instruction from MBR
-        right_instruction = self.MBR & 0b1111_1111_1111_1111_1111 # Getting the last 20bits for right instruction from MBR
-        
-        self.IR = left_instruction >> 12 # Getting the first 8bits ie opcode
-        self.MAR = left_instruction & 0b1111_1111_1111 # Getting the last 12bits for adress
-        self.IBR = right_instruction # Storing right instruction in IBR
-        
-        self.execute_cycle()
-    
-    def execute_cycle(self):
-    
-        # Data transfer instructions
-        if self.IR == 0b0000_1010: # LOAD MQ
-            self.AC = self.MQ
-        
-        elif self.IR == 0b0000_1001: # LOAD MQ,M(X)
-            self.MBR = self.M[self.MAR]
-            self.MQ = self.MBR
-        
-        elif self.IR == 0b0010_0001: # STOR M(X)
-            self.MBR = self.AC
-            self.M[self.MAR] = self.MBR
-        
-        elif self.IR == 0b0000_0001: # LOAD M(X)
-            self.MBR = self.M[self.MAR]
-            self.AC = self.MBR
-        
-        elif self.IR == 0b0000_0010: # LOAD -M(X)
-            self.MBR = self.M[self.MAR]
-            self.MBR = ~self.MBR + 1
-            self.AC = self.MBR
-        
-        elif self.IR == 0b0000_0011: # LOAD |M(X)|
-            self.MBR = self.M[self.MAR]
-            if self.MBR < 0:
-                self.MBR = ~self.MBR + 1
-            self.AC = self.MBR
-        
-        elif self.IR == 0b0000_0100: # LOAD -|M(X)|
-            self.MBR = self.M[self.MAR]
-            if self.MBR < 0:
-                self.MBR = ~self.MBR + 1
-            self.MBR = ~self.MBR + 1
-            self.AC = self.MBR
-        
-        # Unconditional branch instructions
-        elif self.IR == 0b0000_1101: # JUMP M(X,0:19)
-            self.PC = self.MAR
-            self.fetch_cycle()
-        
-        elif self.IR == 0b0000_1110: # JUMP M(X,20:39)
-            self.PC = self.MAR
-            self.IBR = 0b0000_0000_0000_0000_0000 #resetting IBR
-            
-            # kind of fetch cycle
-            self.MAR = self.PC
-            self.MBR = self.M[self.MAR]
-            self.PC +=1
-            
-            # kind of decode cycle with ignoring left instruction
-            right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
-            self.IR = right_instruction >> 12
-            self.MAR = right_instruction & 0b1111_1111_1111
-            
-            # going to execute cycle
-            self.execute_cycle()
-        
-        # Conditional branch instructions
-        elif self.IR == 0b0000_1111: # JUMP+ M(X,0:19)
-            if self.AC >= 0:
-                self.PC = self.MAR
-                self.fetch_cycle()
-        
-        elif self.IR == 0b0001_0000: # JUMP+ M(X,20:39)
-            if self.AC >= 0:
-                self.PC = self.MAR
-                self.IBR = 0b0000_0000_0000_0000_0000 #resetting IBR
-                
-                # kind of fetch cycle
+        while True:
+            # Executing Fetch cycle
+            # Adress for the instruction is being fetched from PC to MAR which
+            # loads that memory location into MBR and PC is incremented by one
+            if flag == "fetch":
                 self.MAR = self.PC
+                # print(self.MAR)
                 self.MBR = self.M[self.MAR]
-                self.PC +=1
                 
-                # kind of decode cycle with ignoring left instruction
-                right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
-                self.IR = right_instruction >> 12
-                self.MAR = right_instruction & 0b1111_1111_1111
+                self.PC += 1
                 
-                # going to execute cycle
-                self.execute_cycle()
-        
-        # Arithmetic instructions
-        elif self.IR == 0b0000_0101: # ADD M(X)
-            self.MBR = self.M[self.MAR]
-            self.AC = self.AC + self.MBR
-        
-        elif self.IR == 0b0000_0111: # ADD |M(X)|
-            self.MBR = self.M[self.MAR]
-            if self.MBR < 0:
-                self.MBR = ~self.MBR + 1
-            self.AC = self.AC + self.MBR
-        
-        elif self.IR == 0b0000_0110: # SUB M(X)
-            self.MBR = self.M[self.MAR]
-            self.AC = self.AC - self.MBR
-        
-        elif self.IR == 0b0000_1000: # SUB |M(X)|
-            self.MBR = self.M[self.MAR]
-            if self.MBR < 0:
-                self.MBR = ~self.MBR + 1
-            self.AC = self.AC - self.MBR
-        
-        elif self.IR == 0b0000_1011: # MUL M(X)
-            self.MBR = self.M[self.MAR]
-            Product = self.MQ * self.MBR
-            self.AC = Product >> 40
-            self.MQ = Product & 0b1111_1111_1111_1111_1111_1111_1111_1111_1111_1111
-        
-        elif self.IR == 0b0000_1100: # DIV M(X)
-            self.MBR = self.M[self.MAR]
-            Quotient = self.AC // self.MBR
-            Remainder = self.AC % self.MBR
-            self.AC = Remainder
-            self.MQ = Quotient
-        
-        elif self.IR == 0b0001_0100: # LSH
-            self.AC = self.AC << 1
-        
-        elif self.IR == 0b0001_0101: # RSH
-            self.AC = self.AC >> 1
-        
-        # Adress modify instructions
-        elif self.IR == 0b0001_0010: # STOR M(X,8:19)
-            self.MBR = self.M[self.MAR]
-            left_instruction = self.MBR >> 20
-            right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
-            left_instruction = (left_instruction & 0b1111_1111_0000_0000_0000) | (self.AC & 0b1111_1111_1111)
-            self.MBR = (left_instruction << 20) | right_instruction
-            self.M[self.MAR] = self.MBR
-        
-        elif self.IR == 0b0001_0011: # STOR M(X,28:39)
-            self.MBR = self.M[self.MAR]
-            self.MBR = (self.MBR & 0b1111_1111_1111_1111_1111_1111_1111_0000_0000_0000) | (self.AC & 0b1111_1111_1111)
-            self.M[self.MAR] = self.MBR
-        
-        elif self.IR == 0b0001_1100: # NOP
-            print(self.M[1])
-            print(self.M[2])
-            print(self.M[3])
-            print(self.M[4])
-            print(self.M[5])
-            print(self.M[6])
-            print(self.M[7])
-            print(self.M[8])
-            print(self.M[9])
-            print(self.M[10])
-            exit()
-        
-        self.IR = 0b0000_0000 # resetting IR after use
-        self.MAR = 0b0000_0000_0000 # resetting MAR after use
-        
-        if self.IBR:
-            self.IR = self.IBR >> 12 # Getting the first 8bits ie opcode
-            self.MAR = self.IBR & 0b1111_1111_1111 # Getting the last 12bits for adress
+                flag = "decode"
             
-            self.IBR = 0b0000_0000_0000_0000_0000 # resetting IBR after it's use
+            # Executing Decode cycle
+            if flag == "decode":
+                # Separating left and the right instruction from MBR
+                left_instruction  = self.MBR >> 20 # First 20-bits of MBR
+                right_instruction = self.MBR & 0b1111_1111_1111_1111_1111 # Last 20-bits of MBR
+                
+                # Extracting opcode and address from left instruction
+                self.IR = left_instruction >> 12 # First 8-bits of left instruction
+                self.MAR = left_instruction & 0b1111_1111_1111 # Last 12-bits of left instruction
+                self.IBR = right_instruction # Storing right instruction in IBR
+                
+                flag = "execute"
             
-            self.execute_cycle()
-        
-        else:
-            self.fetch_cycle()
+            # Executing Execute cycle
+            # Acts like an ALU which performs the required operation based on the opcode
+            if flag == "execute":
+                
+                # Data transfer instructions
+                if self.IR == 0b0000_1010: # LOAD MQ
+                    self.AC = self.MQ
+                
+                elif self.IR == 0b0000_1001: # LOAD MQ,M(X)
+                    self.MBR = self.M[self.MAR]
+                    self.MQ = self.MBR
+                
+                elif self.IR == 0b0010_0001: # STOR M(X)
+                    self.MBR = self.AC
+                    self.M[self.MAR] = self.MBR
+                
+                elif self.IR == 0b0000_0001: # LOAD M(X)
+                    self.MBR = self.M[self.MAR]
+                    self.AC = self.MBR
+                
+                elif self.IR == 0b0000_0010: # LOAD -M(X)
+                    self.MBR = self.M[self.MAR]
+                    self.MBR = ~self.MBR + 1
+                    self.AC = self.MBR
+                
+                elif self.IR == 0b0000_0011: # LOAD |M(X)|
+                    self.MBR = self.M[self.MAR]
+                    if self.MBR < 0:
+                        self.MBR = ~self.MBR + 1
+                    self.AC = self.MBR
+                
+                elif self.IR == 0b0000_0100: # LOAD -|M(X)|
+                    self.MBR = self.M[self.MAR]
+                    if self.MBR < 0:
+                        self.MBR = ~self.MBR + 1
+                    self.MBR = ~self.MBR + 1
+                    self.AC = self.MBR
+                
+                # Unconditional branch instructions
+                elif self.IR == 0b0000_1101: # JUMP M(X,0:19)
+                    self.PC = self.MAR
+                    flag = "fetch"
+                    continue
+                
+                elif self.IR == 0b0000_1110: # JUMP M(X,20:39)
+                    self.PC = self.MAR
+                    self.IBR = 0b0000_0000_0000_0000_0000 #resetting IBR
+                    
+                    # kind of fetch cycle
+                    self.MAR = self.PC
+                    self.MBR = self.M[self.MAR]
+                    self.PC +=1
+                    
+                    # kind of decode cycle with ignoring left instruction
+                    right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
+                    self.IR = right_instruction >> 12
+                    self.MAR = right_instruction & 0b1111_1111_1111
+                    
+                    # going to execute cycle
+                    flag = "execute"
+                    continue
+                # Conditional branch instructions
+                elif self.IR == 0b0000_1111: # JUMP+ M(X,0:19)
+                    if self.AC >= 0:
+                        self.PC = self.MAR
+                        flag = "fetch"
+                        continue
+                
+                elif self.IR == 0b0001_0000: # JUMP+ M(X,20:39)
+                    if self.AC >= 0:
+                        self.PC = self.MAR
+                        self.IBR = 0b0000_0000_0000_0000_0000 #resetting IBR
+                        
+                        # kind of fetch cycle
+                        self.MAR = self.PC
+                        self.MBR = self.M[self.MAR]
+                        self.PC +=1
+                        
+                        # kind of decode cycle with ignoring left instruction
+                        right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
+                        self.IR = right_instruction >> 12
+                        self.MAR = right_instruction & 0b1111_1111_1111
+                        
+                        # going to execute cycle
+                        flag == "execute"
+                        continue
+                
+                # Arithmetic instructions
+                elif self.IR == 0b0000_0101: # ADD M(X)
+                    self.MBR = self.M[self.MAR]
+                    self.AC = self.AC + self.MBR
+                
+                elif self.IR == 0b0000_0111: # ADD |M(X)|
+                    self.MBR = self.M[self.MAR]
+                    if self.MBR < 0:
+                        self.MBR = ~self.MBR + 1
+                    self.AC = self.AC + self.MBR
+                
+                elif self.IR == 0b0000_0110: # SUB M(X)
+                    self.MBR = self.M[self.MAR]
+                    self.AC = self.AC - self.MBR
+                
+                elif self.IR == 0b0000_1000: # SUB |M(X)|
+                    self.MBR = self.M[self.MAR]
+                    if self.MBR < 0:
+                        self.MBR = ~self.MBR + 1
+                    self.AC = self.AC - self.MBR
+                
+                elif self.IR == 0b0000_1011: # MUL M(X)
+                    self.MBR = self.M[self.MAR]
+                    Product = self.MQ * self.MBR
+                    self.AC = Product >> 40
+                    self.MQ = Product & 0b1111_1111_1111_1111_1111_1111_1111_1111_1111_1111
+                
+                elif self.IR == 0b0000_1100: # DIV M(X)
+                    self.MBR = self.M[self.MAR]
+                    Quotient = self.AC // self.MBR
+                    Remainder = self.AC % self.MBR
+                    self.AC = Remainder
+                    self.MQ = Quotient
+                
+                elif self.IR == 0b0001_0100: # LSH
+                    self.AC = self.AC << 1
+                
+                elif self.IR == 0b0001_0101: # RSH
+                    self.AC = self.AC >> 1
+                
+                # Adress modify instructions
+                elif self.IR == 0b0001_0010: # STOR M(X,8:19)
+                    self.MBR = self.M[self.MAR]
+                    left_instruction = self.MBR >> 20
+                    right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
+                    left_instruction = (left_instruction & 0b1111_1111_0000_0000_0000) | (self.AC & 0b1111_1111_1111)
+                    self.MBR = (left_instruction << 20) | right_instruction
+                    self.M[self.MAR] = self.MBR
+                
+                elif self.IR == 0b0001_0011: # STOR M(X,28:39)
+                    self.MBR = self.M[self.MAR]
+                    self.MBR = (self.MBR & 0b1111_1111_1111_1111_1111_1111_1111_0000_0000_0000) | (self.AC & 0b1111_1111_1111)
+                    self.M[self.MAR] = self.MBR
+                
+                elif self.IR == 0b0001_1100: # NOP
+                    break
+                
+                self.IR = 0b0000_0000 # resetting IR after use
+                self.MAR = 0b0000_0000_0000 # resetting MAR after use
+                
+                if self.IBR:
+                    self.IR = self.IBR >> 12 # Getting the first 8bits ie opcode
+                    self.MAR = self.IBR & 0b1111_1111_1111 # Getting the last 12bits for adress
+                    
+                    self.IBR = 0b0000_0000_0000_0000_0000 # resetting IBR after it's use
+                    
+                    flag = "execute"
+                
+                else:
+                    flag = "fetch"
 
 a = IAS_processor(100, 50, "machine_code.txt")
-print(a.AC)
+print(a.M[1])
+print(a.M[2])
+print(a.M[3])
+print(a.M[4])
+print(a.M[5])
+print(a.M[6])
+print(a.M[7])
+print(a.M[8])
+print(a.M[9])
+print(a.M[10])
