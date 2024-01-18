@@ -25,8 +25,9 @@ class IASAssembler:
             "RSH": "00010101",
             "STOR_M_X_8_19": "00010010",
             "STOR_M_X_28_39": "00010011",
-            "COMPARE_M_X": "00011111",
             "NOP": "00011100",
+            "INCR_AC": "00100000",
+            "DECR_AC": "00100010"
         }
 
     #  source code in assembly might look like [symbol aka translate it into its opcode] [address]
@@ -55,7 +56,7 @@ class IASAssembler:
                             opcode = self.instructions.get(instruction)
 
                             if opcode:
-                                if opcode == "00001010" or opcode == "00011100":
+                                if opcode in {"00001010", "00011100", "00100000", "00100010"}:
                                     temp2 += opcode
                                     temp2 += format(0, "012b")
                                 else:

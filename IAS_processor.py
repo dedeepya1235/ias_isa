@@ -49,15 +49,14 @@ class IAS_processor:
             # loads that memory location into MBR and PC is incremented by one
             if flag == "fetch":
                 self.MAR = self.PC
-                # print(self.MAR)
                 self.MBR = self.M[self.MAR]
                 
                 self.PC += 1
                 
-                flag = "decode"
+                flag = "load"
             
-            # Executing Decode cycle
-            if flag == "decode":
+            # Loads the instructions into Program control unit
+            if flag == "load":
                 # Separating left and the right instruction from MBR
                 left_instruction  = self.MBR >> 20 # First 20-bits of MBR
                 right_instruction = self.MBR & 0b1111_1111_1111_1111_1111 # Last 20-bits of MBR
@@ -70,6 +69,7 @@ class IAS_processor:
                 flag = "execute"
             
             # Executing Execute cycle
+            # Decodes the instruction from the opcode and
             # Acts like an ALU which performs the required operation based on the opcode
             if flag == "execute":
                 
@@ -117,12 +117,12 @@ class IAS_processor:
                     self.PC = self.MAR
                     self.IBR = 0b0000_0000_0000_0000_0000 #resetting IBR
                     
-                    # kind of fetch cycle
+                    # Similar to fetch cycle
                     self.MAR = self.PC
                     self.MBR = self.M[self.MAR]
-                    self.PC +=1
+                    self.PC += 1
                     
-                    # kind of decode cycle with ignoring left instruction
+                    # Loading only the right instruction
                     right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
                     self.IR = right_instruction >> 12
                     self.MAR = right_instruction & 0b1111_1111_1111
@@ -130,6 +130,7 @@ class IAS_processor:
                     # going to execute cycle
                     flag = "execute"
                     continue
+                
                 # Conditional branch instructions
                 elif self.IR == 0b0000_1111: # JUMP+ M(X,0:19)
                     if self.AC >= 0:
@@ -142,12 +143,12 @@ class IAS_processor:
                         self.PC = self.MAR
                         self.IBR = 0b0000_0000_0000_0000_0000 #resetting IBR
                         
-                        # kind of fetch cycle
+                        # Similar to fetch cycle
                         self.MAR = self.PC
                         self.MBR = self.M[self.MAR]
-                        self.PC +=1
+                        self.PC += 1
                         
-                        # kind of decode cycle with ignoring left instruction
+                        # Loading only the right instruction
                         right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
                         self.IR = right_instruction >> 12
                         self.MAR = right_instruction & 0b1111_1111_1111
@@ -213,9 +214,13 @@ class IAS_processor:
                 elif self.IR == 0b0001_1100: # NOP
                     break
                 
-                self.IR = 0b0000_0000 # resetting IR after use
-                self.MAR = 0b0000_0000_0000 # resetting MAR after use
+                # Extra instructions added by us
+                elif self.IR == 0b0010_0000: # INCR AC
+                    self.AC += 1
                 
+                elif self.IR == 0b0010_0010: # DECR AC
+                    self.AC -= 1
+                    
                 if self.IBR:
                     self.IR = self.IBR >> 12 # Getting the first 8bits ie opcode
                     self.MAR = self.IBR & 0b1111_1111_1111 # Getting the last 12bits for adress
@@ -227,7 +232,7 @@ class IAS_processor:
                 else:
                     flag = "fetch"
 
-a = IAS_processor(100, 50, "machine_code.txt")
+a = IAS_processor(20, 50, "machine_code.txt")
 print(a.M[1])
 print(a.M[2])
 print(a.M[3])
