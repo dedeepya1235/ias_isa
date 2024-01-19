@@ -13,7 +13,7 @@ void main(){
     arr[9] = 2;
     arr[10] = 97;
 
-    for(int i=1; i<=10; i++){
+    for(int i=2; i<=10; i++){
         int temp = arr[i];
         int j = i-1;
         while(j>=1 && arr[j] > temp){
