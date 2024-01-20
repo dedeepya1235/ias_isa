@@ -40,20 +40,29 @@ class IAS_processor:
         self.processing()
     
     def processing(self):
-        # A flag which pushes the IAS machine into the right process - Fetch, Decode or Execute
+        # A flag which pushes the IAS machine into the right process - Fetch, Load or Execute
         flag = "fetch"
         
         while True:
             # Executing Fetch cycle
-            # Adress for the instruction is being fetched from PC to MAR which
-            # loads that memory location into MBR and PC is incremented by one
             if flag == "fetch":
-                self.MAR = self.PC
-                self.MBR = self.M[self.MAR]
-                
-                self.PC += 1
-                
-                flag = "load"
+                # if IBR is empty Address for the instruction is being fetched from PC to MAR which
+                # loads that memory location into MBR and PC is incremented by one
+                if not self.IBR:
+                    self.MAR = self.PC
+                    self.MBR = self.M[self.MAR]
+                    
+                    self.PC += 1
+                    
+                    flag = "load"
+                # else the right instruction stored in IBR is loaded
+                else:
+                    self.IR = self.IBR >> 12 # Getting the first 8bits ie opcode
+                    self.MAR = self.IBR & 0b1111_1111_1111 # Getting the last 12bits for adress
+                    
+                    self.IBR = 0b0000_0000_0000_0000_0000 # resetting IBR after it's use
+                    
+                    flag = "execute"
             
             # Loads the instructions into Program control unit
             if flag == "load":
@@ -64,7 +73,9 @@ class IAS_processor:
                 # Extracting opcode and address from left instruction
                 self.IR = left_instruction >> 12 # First 8-bits of left instruction
                 self.MAR = left_instruction & 0b1111_1111_1111 # Last 12-bits of left instruction
-                self.IBR = right_instruction # Storing right instruction in IBR
+                
+                # Storing right instruction in IBR
+                self.IBR = right_instruction
                 
                 flag = "execute"
             
@@ -72,7 +83,6 @@ class IAS_processor:
             # Decodes the instruction from the opcode and
             # Acts like an ALU which performs the required operation based on the opcode
             if flag == "execute":
-                
                 # Data transfer instructions
                 if self.IR == 0b0000_1010: # LOAD MQ
                     self.AC = self.MQ
@@ -110,51 +120,47 @@ class IAS_processor:
                 # Unconditional branch instructions
                 elif self.IR == 0b0000_1101: # JUMP M(X,0:19)
                     self.PC = self.MAR
+                    self.IBR = 0b0000_0000_0000_0000_0000 #resetting IBR
                     flag = "fetch"
                     continue
                 
                 elif self.IR == 0b0000_1110: # JUMP M(X,20:39)
                     self.PC = self.MAR
-                    self.IBR = 0b0000_0000_0000_0000_0000 #resetting IBR
                     
                     # Similar to fetch cycle
                     self.MAR = self.PC
                     self.MBR = self.M[self.MAR]
                     self.PC += 1
                     
-                    # Loading only the right instruction
-                    right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
-                    self.IR = right_instruction >> 12
-                    self.MAR = right_instruction & 0b1111_1111_1111
+                    # Loading only the right instruction into IBR
+                    self.IBR = self.MBR & 0b1111_1111_1111_1111_1111
                     
-                    # going to execute cycle
-                    flag = "execute"
+                    # going to fetch cycle
+                    flag = "fecth"
                     continue
                 
                 # Conditional branch instructions
                 elif self.IR == 0b0000_1111: # JUMP+ M(X,0:19)
                     if self.AC >= 0:
                         self.PC = self.MAR
+                        self.IBR = 0b0000_0000_0000_0000_0000 # resetting IBR
                         flag = "fetch"
                         continue
                 
                 elif self.IR == 0b0001_0000: # JUMP+ M(X,20:39)
                     if self.AC >= 0:
                         self.PC = self.MAR
-                        self.IBR = 0b0000_0000_0000_0000_0000 #resetting IBR
                         
                         # Similar to fetch cycle
                         self.MAR = self.PC
                         self.MBR = self.M[self.MAR]
                         self.PC += 1
                         
-                        # Loading only the right instruction
-                        right_instruction = self.MBR & 0b1111_1111_1111_1111_1111
-                        self.IR = right_instruction >> 12
-                        self.MAR = right_instruction & 0b1111_1111_1111
+                        # Loading only the right instruction in IBR
+                        self.IBR = self.MBR & 0b1111_1111_1111_1111_1111
                         
                         # going to execute cycle
-                        flag == "execute"
+                        flag == "fetch"
                         continue
                 
                 # Arithmetic instructions
@@ -220,18 +226,9 @@ class IAS_processor:
                 
                 elif self.IR == 0b0010_0010: # DECR AC
                     self.AC -= 1
-                    
-                if self.IBR:
-                    self.IR = self.IBR >> 12 # Getting the first 8bits ie opcode
-                    self.MAR = self.IBR & 0b1111_1111_1111 # Getting the last 12bits for adress
-                    
-                    self.IBR = 0b0000_0000_0000_0000_0000 # resetting IBR after it's use
-                    
-                    flag = "execute"
                 
-                else:
-                    flag = "fetch"
-
+                # heading back to fetch cycle
+                flag = "fetch"
 a = IAS_processor(20, 50, "machine_code.txt")
 print(a.M[1])
 print(a.M[2])
