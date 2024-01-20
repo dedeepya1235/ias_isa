@@ -1,10 +1,9 @@
 from IAS_processor import IASprocessor
 from IAS_assembler import IASAssembler
 
-assembler = IASAssembler()
-machine_code = assembler.assemble("./assembly_code.txt", "./machine_code.txt")
+assembler = IASAssembler("./assembly_code.txt", "./machine_code.txt")
 
-a = IASprocessor(20, 50, "./machine_code.txt")
+processor = IASprocessor(20, 50, "./machine_code.txt")
 print(a.M[1])
 print(a.M[2])
 print(a.M[3])

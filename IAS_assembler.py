@@ -1,8 +1,7 @@
-# assembler
-
 
 class IASAssembler:
-    def __init__(self):
+    def __init__(self, path, out):
+        # Dictionary contains the opcode for the possible instructions in assembly code
         self.instructions = {
             "LOAD_MQ": "00001010",
             "LOAD_MQ_M_X": "00001001",
@@ -29,16 +28,21 @@ class IASAssembler:
             "INCR_AC": "00100000",
             "DECR_AC": "00100010"
         }
+        
+        self.path = path
+        self.out = out
+        
+        self.assemble()
 
-    #  source code in assembly might look like [symbol aka translate it into its opcode] [address]
-    def assemble(self, path, out):
-        machine_code = []
+    # We want the machine code in format 12-bit address + ' ' + 40-bit memory location
+    def assemble(self):
+        # c keeps track of the line address
         c = 0
 
-        with open(path, "r") as source, open(out, "w") as output:
+        with open(self.path, "r") as source, open(self.out, "w") as output:
             for line in source:
                 c += 1
-
+                # Allows us to add comments in the assembly code by using #
                 if line.startswith("#"):
                     continue
 
@@ -56,6 +60,8 @@ class IASAssembler:
                             opcode = self.instructions.get(instruction)
 
                             if opcode:
+                                # if the instructions are LOAD MQ, NOP, INCR or DECR
+                                # Since they don't need an address, we add 12-0-bits behind it
                                 if opcode in {"00001010", "00011100", "00100000", "00100010"}:
                                     temp2 += opcode
                                     temp2 += format(0, "012b")
@@ -68,13 +74,11 @@ class IASAssembler:
                     else:
                         if int(first) >= 0:
                             temp2 += format(int(first), "040b")
-
+                        # If the number is negative, this converts it to two's compliment form
                         else:
                             temp2 += format(int(first) & 0b111111111111, "040b")
 
                     if len(temp2) < 40:
                         temp2 += "0" * (40 - len(temp2))
-                    machine_code.append(temp1 + temp2)
+                    # Finally the program writes the machine code line by line and saves it in output file
                     output.write(temp1 + temp2 + "\n")
-
-        return machine_code
