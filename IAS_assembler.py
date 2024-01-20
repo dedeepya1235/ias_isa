@@ -78,7 +78,3 @@ class IASAssembler:
                     output.write(temp1 + temp2 + "\n")
 
         return machine_code
-
-assembler = IASAssembler()
-machine_code = assembler.assemble("./assembly_code.txt", "./machine_code.txt")
-# print(machine_code)
