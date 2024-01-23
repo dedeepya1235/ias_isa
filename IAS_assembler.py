@@ -24,7 +24,7 @@ class IASAssembler:
             "RSH": "00010101",
             "STOR_M_X_8_19": "00010010",
             "STOR_M_X_28_39": "00010011",
-            "NOP": "00011100",
+            "HALT": "00011100",
             "INCR_AC": "00100000",
             "DECR_AC": "00100010"
         }
@@ -60,7 +60,7 @@ class IASAssembler:
                             opcode = self.instructions.get(instruction)
 
                             if opcode:
-                                # if the instructions are LOAD MQ, NOP, INCR or DECR
+                                # if the instructions are LOAD MQ, HALT, INCR or DECR
                                 # Since they don't need an address, we add 12-0-bits behind it
                                 if opcode in {"00001010", "00011100", "00100000", "00100010"}:
                                     temp2 += opcode

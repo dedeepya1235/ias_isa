@@ -217,7 +217,7 @@ class IASprocessor:
                     self.MBR = (self.MBR & 0b1111_1111_1111_1111_1111_1111_1111_0000_0000_0000) | (self.AC & 0b1111_1111_1111)
                     self.M[self.MAR] = self.MBR
                 
-                elif self.IR == 0b0001_1100: # NOP
+                elif self.IR == 0b0001_1100: # HALT
                     break
                 
                 # Extra instructions added by us
