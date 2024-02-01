@@ -32,6 +32,7 @@ class IASprocessor:
                         else:
                             new += '1'
                     x[1] = int(new, 2) + 1
+                    x[1] *= -1
                 else:
                     x[1] = int(x[1], 2)
                 self.M[x[0]] = x[1]

@@ -76,7 +76,7 @@ class IASAssembler:
                             temp2 += format(int(first), "040b")
                         # If the number is negative, this converts it to two's compliment form
                         else:
-                            temp2 += format(int(first) & 0b111111111111, "040b")
+                            temp2 += format(int(first) & 0xffffffffff, "040b")
 
                     if len(temp2) < 40:
                         temp2 += "0" * (40 - len(temp2))
